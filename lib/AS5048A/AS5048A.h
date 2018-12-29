@@ -44,7 +44,7 @@ class AS5048A{
    * Read a register from the sensor
    * Takes the address of the register as a 16 bit word
    * Returns the value of the register
-   * MeaValueMedian разрешает найти медианое среднее значение из 16 измерений так как
+   * MeaValueMedian разрешает найти медианное среднее значение из 16 измерений так как
    * после 16 тактов CLK циклов, CSn необходимо вернуть к высокому состоянию, чтобы сбросить
      некоторые части ядра интерфейса.
    */
@@ -72,7 +72,7 @@ class AS5048A{
   word getRawRotation(bool EnableMedianValue = false);
 
   /**
-   * Возвращает физическую величину в угловых градусах, олученное из двоичного 14 битного числа АЦП 
+   * Возвращает физическую величину в угловых градусах, полученное из двоичного 14 битного числа АЦП 
    */
   float RotationRawToAngle (word DiscreteCode);
   
@@ -82,7 +82,7 @@ class AS5048A{
   float RotationRawToRadian(word DiscreteCode);
 
   /**
-  * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру прередають адреса переменных 
+  * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру передаются адреса переменных 
   */
   void AbsoluteAngleRotation (float *RotationAngle, float *AngleCurrent, float *AnglePrevious);
 
@@ -102,7 +102,7 @@ class AS5048A{
   float GetAngularSeconds (float AngleAbsolute);
   
   /**
-  *возвращает перемещение прямозубой зубчатой рекйки в мм
+  *возвращает перемещение прямозубой зубчатой рейки в мм
   *WheelRotationAngle - Угол поворота колеса
   *NormalModule - Модуль нормальный
   *NumberGearTeeth - Число зубьев колеса или число заходов червяка
@@ -112,9 +112,9 @@ class AS5048A{
   float LinearDisplacementRack ( float WheelRotationAngle, float NormalModule, float NumberGearTeeth);
   
   /**
-  *возвращает перемещение винтовой предачи в мм
+  *возвращает перемещение винтовой передачи в мм
   *StepGroove - шаг резьбы винта
-  *ScrewRotationAngle - eгол поворота винта
+  *ScrewRotationAngle - угол поворота винта
   */ 
   float LinearMotionHelicalGear ( float ScrewRotationAngle, float StepGroove);
 
@@ -147,12 +147,12 @@ class AS5048A{
   
   /**
    *Функция посылает команда NOP и возвращает содержимое регистра. Команда NOP представляет собой фиктивную 
-   *запись в регитр x0000 сенсора AS5048
+   *запись в регистр x0000 сенсора AS5048
    */
   word DummyOperNoInf();
   
   /**
-   *Процидура записывает абсолютное значен измернное сенсером AS5048, случайно расположеного магнита на оси вращения,
+   *Процедура записывает абсолютное значен измеренно сенсором AS5048, случайно расположенного магнита на оси вращения,
    *как нулевую позицию угла 
    */
   void ProgAbsolAngleZeroPosit ();

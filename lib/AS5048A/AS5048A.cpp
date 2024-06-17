@@ -1,3 +1,5 @@
+#include "AS5048A.h"
+
 //#define AS5048A_DEBUG
 
 const int AS5048A_NOP                           = 0x0000; // Фиктивная операция, нет информации.

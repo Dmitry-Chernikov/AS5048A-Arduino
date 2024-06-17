@@ -1,6 +1,4 @@
-#include "Arduino.h"
-
-#include <AS5048A.h> 
+#include <AS5048A.h>
 
 //#define AS5048A_DEBUG
 
@@ -8,9 +6,9 @@ const int AS5048A_NOP                     = 0x0000; // Фиктивная опе
 const int AS5048A_CLEAR_ERROR_FLAG              = 0x0001; //Регистр ошибок. Все ошибки очищаются путем доступа.
 const int AS5048A_PROGRAMMING_CONTROL           = 0x0003; //Регистр управления программированием. Программирование должно быть включено до прожига памяти. Перед программированием проверка является обязательной. См. Процедуру программирования.
 const int AS5048A_OTP_REGISTER_ZERO_POS_HIGH    = 0x0016; //Нулевое значение 8 бит старших
-const int AS5048A_OTP_REGISTER_ZERO_POS_LOW     = 0x0017; //Нулевая значение 6 бит младших 
+const int AS5048A_OTP_REGISTER_ZERO_POS_LOW     = 0x0017; //Нулевая значение 6 бит младших
 const int AS5048A_DIAG_AGC                      = 0x3FFD; //(0-7)Значение автоматического регулирования усиления. 0 десятичной представляет высокое магнитное поле, 255 десятичных представляет низкое магнитное поле. (8-13)Флаги диагностики
-const int AS5048A_MAGNITUDE                     = 0x3FFE; //Значение выходной мощности CORDIC 
+const int AS5048A_MAGNITUDE                     = 0x3FFE; //Значение выходной мощности CORDIC
 const int AS5048A_ANGLE                         = 0x3FFF; //Угловое выходное значение, включая коррекцию нулевой позиции Resolution_ADC 14-bit resolution (0.0219°/LSB)
 
 /**
@@ -19,7 +17,7 @@ const int AS5048A_ANGLE                         = 0x3FFF; //Угловое вы�
  */
 AS5048A::AS5048A(byte Arg_Cs){
   _cs = Arg_Cs;
-  _errorFlag = false; 
+  _errorFlag = false;
   _position = 0;
 }
 
@@ -29,24 +27,24 @@ AS5048A::AS5048A(byte Arg_Cs){
  * Sets up the SPI interface
  */
 void AS5048A::init(){
-  /** 
+  /**
   * 1MHz clock (AMS should be able to accept up to 10MHz)
   * mySettting (speedMaximum, dataOrder, dataMode)
   * speedMaximum - максимальная скорость связи. Для чипа SPI, рассчитанного на частоту до 20 МГц , используйте 20000000.
   * dataOrder - порядок вывода данных в/из шины SPI,  может быть LSBFIRST (наименьший разряд(бит) первый) или MSBFIRST (старший разряд первый)
   * dataMode - устанавливает режим работы шины SPI, задавая уровень сигнала синхронизации и фазу синхронизации
   * SPI_MODE0 (Уровень сигнала (CPOL)-0, Фаза (CPHA)-0)
-  * SPI_MODE1 (Уровень сигнала (CPOL)-0, Фаза (CPHA)-1) 
+  * SPI_MODE1 (Уровень сигнала (CPOL)-0, Фаза (CPHA)-1)
   * SPI_MODE2 (Уровень сигнала (CPOL)-1, Фаза (CPHA)-0)
   * SPI_MODE3 (Уровень сигнала (CPOL)-1, Фаза (CPHA)-1)
-  * f(sample) = Min-10.2, Typ-11.25, Max-12.4. (kHz) 
+  * f(sample) = Min-10.2, Typ-11.25, Max-12.4. (kHz)
   * Поддерживаемые режимы  I2C AS5048B:
   * • Случайное / последовательное чтение
   * • Байт / Запись страницы
   * • Стандартный: от 0 до 100 кГц, тактовая частота (ведомый режим)
   * • Быстрый режим: тактовая частота от 0 до 400 кГц (ведомый режим)
   * • Высокая скорость: от 0 до 3,4 МГц тактовой частоты (ведомый режим)
-  */    
+  */
   settings = SPISettings(1000000, MSBFIRST, SPI_MODE1);
   //инициализация пина Slave Select если LOW ведомый взаимодействует с ведущим если HIGH ведомый игнорирует сигналы от ведущего
   pinMode(_cs, OUTPUT);
@@ -65,7 +63,7 @@ void AS5048A::close(){
 /**
  * Utility function used to calculate even parity of word
  * Вычисление бита чётности 14 битного адресса и запись в 15-й бит возвращаемого 16 битного слова
- */ 
+ */
 byte AS5048A::spiCalcEvenParity(word Value){
   byte cnt = 0;
   byte i;
@@ -78,7 +76,7 @@ byte AS5048A::spiCalcEvenParity(word Value){
     Value >>= 1;
   }
   return cnt & 0x1;
-  
+
   //byte operand_compare =  bitRead(Value,0);
   //byte i = 1;
   //do{
@@ -109,8 +107,8 @@ int AS5048A::getRotation(){
  * Возвращает угловое двоичное 14 битное угловое значение (DEC 16383)
  * Угловое выходное значение, включая коррекцию нулевой позиции.
  */
-word AS5048A::getRawRotation(bool EnableMedianValue){
-  return AS5048A::read(AS5048A_ANGLE, EnableMedianValue);
+word AS5048A::getRawRotation(bool EnableMedianValue = false, byte NumberFunctionValues = 16){
+  return AS5048A::read(AS5048A_ANGLE, EnableMedianValue, NumberFunctionValues);
 }
 
 /**
@@ -128,38 +126,66 @@ float AS5048A::RotationRawToRadian(word DiscreteCode){
 }
 
 /**
- * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру прередаються адреса переменных 
+ * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру прередаються адреса переменных
  */
 void AS5048A::AbsoluteAngleRotation (float *RotationAngle, float *AngleCurrent, float *AnglePrevious){
 
   if (*AngleCurrent != *AnglePrevious){
     //сделан круг на возрастание с 360 на 1
-        if ((*AngleCurrent < 90) && (*AnglePrevious > 270) /*|| 
-    (*AngleCurrent < 1.5707963267948966192313216916398) && (*AnglePrevious > 4.7123889803846898576939650749193) */){
-            *RotationAngle += abs(360 - abs(*AngleCurrent - *AnglePrevious));
-      _reverse = true;
-    }  
-    //сделан круг на убывание с 1 на 360
-        if ((*AnglePrevious < 90) && (*AngleCurrent > 270) /*|| 
-    (*AnglePrevious < 1.5707963267948966192313216916398) && (*AngleCurrent > 4.7123889803846898576939650749193) */){
-            *RotationAngle -= abs(360 - abs(*AngleCurrent - *AnglePrevious));
-      _reverse = false;
+    if ((*AngleCurrent < 90) && (*AnglePrevious > 270) /*|| (*AngleCurrent < 1.5707963267948966192313216916398) && (*AnglePrevious > 4.7123889803846898576939650749193) */){
+        *RotationAngle += abs(360 - abs(*AngleCurrent - *AnglePrevious));
+        _reverse = true;
     }
-        //ход по кругу на возрастание
-        if (*AngleCurrent > *AnglePrevious && ((*AngleCurrent < 90) && (*AnglePrevious > 270))!=true && ((*AnglePrevious < 90) && (*AngleCurrent > 270))!=true /*||
-    *AngleCurrent > *AnglePrevious && ((*AngleCurrent < 1.5707963267948966192313216916398) && (*AnglePrevious > 4.7123889803846898576939650749193))!=true && ((*AnglePrevious < 1.5707963267948966192313216916398) && (*AngleCurrent > 4.7123889803846898576939650749193))!=true*/){
-            *RotationAngle += abs(*AngleCurrent - *AnglePrevious);
-      _reverse = true;
-    } 
-        //ход по кругу на убывание
-        if (*AnglePrevious > *AngleCurrent && ((*AngleCurrent < 90) && (*AnglePrevious > 270))!=true && ((*AnglePrevious < 90) && (*AngleCurrent > 270))!=true /*||
-    *AnglePrevious > *AngleCurrent && ((*AngleCurrent < 1.5707963267948966192313216916398) && (*AnglePrevious > 4.7123889803846898576939650749193))!=true && ((*AnglePrevious < 1.5707963267948966192313216916398) && (*AngleCurrent > 4.7123889803846898576939650749193))!=true*/){
-            *RotationAngle -= abs(*AnglePrevious - *AngleCurrent);
-      _reverse = false;
-    }   
+
+    //сделан круг на убывание с 1 на 360
+    if ((*AnglePrevious < 90) && (*AngleCurrent > 270) /*|| (*AnglePrevious < 1.5707963267948966192313216916398) && (*AngleCurrent > 4.7123889803846898576939650749193) */){
+        *RotationAngle -= abs(360 - abs(*AngleCurrent - *AnglePrevious));
+        _reverse = false;
+    }
+
+    //ход по кругу на возрастание
+    if (*AngleCurrent > *AnglePrevious && ((*AngleCurrent < 90) && (*AnglePrevious > 270))!=true && ((*AnglePrevious < 90) && (*AngleCurrent > 270))!=true /*|| *AngleCurrent > *AnglePrevious && ((*AngleCurrent < 1.5707963267948966192313216916398) && (*AnglePrevious > 4.7123889803846898576939650749193))!=true && ((*AnglePrevious < 1.5707963267948966192313216916398) && (*AngleCurrent > 4.7123889803846898576939650749193))!=true*/){
+        *RotationAngle += abs(*AngleCurrent - *AnglePrevious);
+        _reverse = true;
+    }
+
+    //ход по кругу на убывание
+    if (*AnglePrevious > *AngleCurrent && ((*AngleCurrent < 90) && (*AnglePrevious > 270))!=true && ((*AnglePrevious < 90) && (*AngleCurrent > 270))!=true /*|| *AnglePrevious > *AngleCurrent && ((*AngleCurrent < 1.5707963267948966192313216916398) && (*AnglePrevious > 4.7123889803846898576939650749193))!=true && ((*AnglePrevious < 1.5707963267948966192313216916398) && (*AngleCurrent > 4.7123889803846898576939650749193))!=true*/){
+        *RotationAngle -= abs(*AnglePrevious - *AngleCurrent);
+        _reverse = false;
+    }
   }
 
-    *AnglePrevious = *AngleCurrent;   
+    *AnglePrevious = *AngleCurrent;
+}
+
+float AS5048A::AbsoluteAngleRotation (float *RotationAngle, float AngleCurrent, float *AnglePrevious){
+
+  if (AngleCurrent != *AnglePrevious){
+    //сделан круг на возрастание с 360 на 1
+    if ((AngleCurrent < 90) && (*AnglePrevious > 270)){
+        *RotationAngle += abs(360 - abs(AngleCurrent - *AnglePrevious));
+    }
+
+    //сделан круг на убывание с 1 на 360
+    if ((*AnglePrevious < 90) && (AngleCurrent > 270)){
+        *RotationAngle -= abs(360 - abs(AngleCurrent - *AnglePrevious));
+    }
+
+    //ход по кругу на возрастание
+    if (AngleCurrent > *AnglePrevious && ((AngleCurrent < 90) && (*AnglePrevious > 270))!=true && ((*AnglePrevious < 90) && (AngleCurrent > 270))!=true){
+        *RotationAngle += abs(AngleCurrent - *AnglePrevious);
+    }
+
+    //ход по кругу на убывание
+    if (*AnglePrevious > AngleCurrent && ((AngleCurrent < 90) && (*AnglePrevious > 270))!=true && ((*AnglePrevious < 90) && (AngleCurrent > 270))!=true){
+        *RotationAngle -= abs(*AnglePrevious - AngleCurrent);
+    }
+  }
+
+    *AnglePrevious = AngleCurrent;
+
+    return *RotationAngle;
 }
 
 /**
@@ -183,18 +209,22 @@ float AS5048A::GetAngularSeconds (float AngleAbsolute){
 *NormalModule - Модуль нормальный
 *NumberGearTeeth - Число зубьев колеса или число заходов червяка
 *(PI * NormalModule) - Шаг торцовый
-*20 - Угол наклона зуба
-*/ 
+*AngleTiltTooth Угол наклона зуба, аргументы по умолчанию 20
+*/
 float AS5048A::LinearDisplacementRack ( float WheelRotationAngle, float NormalModule, float NumberGearTeeth){
-  return WheelRotationAngle * (( ( (PI * NormalModule) / cos(radians(20)) ) * NumberGearTeeth) / 360);
-} 
+  return WheelRotationAngle * ( ((PI * NormalModule) * NumberGearTeeth) / 360);
+}
+
+float AS5048A::LinearDisplacementRack ( float WheelRotationAngle, float NormalModule, float NumberGearTeeth, float AngleTiltTooth = 20){
+  return WheelRotationAngle * (( ( (PI * NormalModule) / cos(radians(AngleTiltTooth)) ) * NumberGearTeeth) / 360);
+}
 
 /**
 *возвращает перемещение винтовой передачи в мм
 *StepGroove - шаг резьбы винта
 *ScrewRotationAngle - угол поворота винта
-*/ 
-float AS5048A::LinearMotionHelicalGear ( float ScrewRotationAngle, float StepGroove){  
+*/
+float AS5048A::LinearMotionHelicalGear ( float ScrewRotationAngle, float StepGroove){
   return (ScrewRotationAngle * (StepGroove / 360));
 }
 
@@ -224,7 +254,7 @@ void AS5048A::printState(){
   Serial.println("0 представляет собой высокое магнитное поле");
   //Serial.println(lowByte(data), BIN);
   Serial.println(lowByte(data), DEC);
-  
+
 /**Диагностические функции AS5048
 * AS5048 обеспечивает диагностические функции ИС, а также диагностические функции магнитного поля ввода. Доступны следующие диагностические флаги: см. Рис. 22 адрес регистра x3FFD (AS5048A) или адрес 31 адреса адреса 251 деци (AS5048B)
   * • OCF (Компенсация смещения завершена), логический максимум указывает законченный алгоритм компенсации смещения. После включения флаг всегда остается логически высоким.
@@ -294,19 +324,19 @@ void AS5048A::printErrors(){
   Serial.println(bitRead(data,2), DEC);
   Serial.println(" ");
   //Serial.println(data, BIN);
-} 
+}
 
 /**
- *Функция посылает команда NOP и возвращает содержимое регистра. Команда NOP представляет собой фиктивную 
+ *Функция посылает команда NOP и возвращает содержимое регистра. Команда NOP представляет собой фиктивную
  *запись в регистр x0000 сенсора AS5048
- */ 
+ */
 word AS5048A::DummyOperNoInf(){
-  return AS5048A::read(AS5048A_NOP,false);  
+  return AS5048A::read(AS5048A_NOP,false);
 }
 
 /**
  *Процедура записывает абсолютное значен измеренное сенсором AS5048, случайно расположенного магнита на оси вращения,
- *как нулевую позицию угла 
+ *как нулевую позицию угла
 
 Программирование AS5048
 Программирование нулевого положения: абсолютное положение угла может быть запрограммировано по интерфейсу. Это может быть полезно для случайного размещения магнита на оси вращения. Считывание в механическом нулевом положении может быть выполнено и записано обратно в ИС. При постоянном программировании позиция не обратима, хранящаяся в ИС. Это программирование может выполняться только один раз. Чтобы упростить вычисление нулевой позиции, необходимо только записать значение в ИС, которое было зачитано ранее из регистра угла.
@@ -329,23 +359,23 @@ word AS5048A::DummyOperNoInf(){
 void AS5048A::ProgAbsolAngleZeroPosit(){
   word rotationzero = 0b0000000000000000;
   word programcontrol = 0b00000000000000;
-  
-  AS5048A::write(AS5048A_OTP_REGISTER_ZERO_POS_HIGH, AS5048A_NOP & ~0xFF00); 
-  AS5048A::write(AS5048A_OTP_REGISTER_ZERO_POS_LOW, AS5048A_NOP & ~0xFFC0); 
-  
+
+  AS5048A::write(AS5048A_OTP_REGISTER_ZERO_POS_HIGH, AS5048A_NOP & ~0xFF00);
+  AS5048A::write(AS5048A_OTP_REGISTER_ZERO_POS_LOW, AS5048A_NOP & ~0xFFC0);
+
   rotationzero |= AS5048A::getRawRotation();
-  
+
   AS5048A::write(AS5048A_OTP_REGISTER_ZERO_POS_HIGH, (rotationzero >> 6) & 0xFF);
   AS5048A::write(AS5048A_OTP_REGISTER_ZERO_POS_LOW, rotationzero & 0x3F);
-  
+
   AS5048A::write(AS5048A_PROGRAMMING_CONTROL, bitSet(programcontrol,0));
   AS5048A::write(AS5048A_PROGRAMMING_CONTROL, bitSet(programcontrol,3));
-  
+
   if (1 < AS5048A::getRawRotation() < -1){
     AS5048A::write(AS5048A_PROGRAMMING_CONTROL, bitSet(programcontrol,6));
   }
 
-  Serial.println(AS5048A::getRawRotation(), DEC); 
+  Serial.println(AS5048A::getRawRotation(), DEC);
 }
 
 /**
@@ -365,31 +395,31 @@ word AS5048A::getZeroPosition(){
 /**
  * функция для сортировки по возрастанию
  */
-void AS5048A::quickSort(word *Arr, int Left, int Right) { 
-  int i = Left, j = Right; 
-  int tmp; 
-  word pivot = Arr[(Left + Right) / 2]; 
+void AS5048A::quickSort(word *Arr, int Left, int Right) {
+  int i = Left, j = Right;
+  int tmp;
+  word pivot = Arr[(Left + Right) / 2];
 
-  /* partition */ 
-  while (i <= j) { 
-    while (Arr[i] < pivot) 
-      i++; 
-    while (Arr[j] > pivot) 
-      j--; 
-    if (i <= j) { 
-      tmp = Arr[i]; 
-      Arr[i] = Arr[j]; 
-      Arr[j] = tmp; 
-      i++; 
-      j--; 
-    } 
-  } 
+  /* partition */
+  while (i <= j) {
+    while (Arr[i] < pivot)
+      i++;
+    while (Arr[j] > pivot)
+      j--;
+    if (i <= j) {
+      tmp = Arr[i];
+      Arr[i] = Arr[j];
+      Arr[j] = tmp;
+      i++;
+      j--;
+    }
+  }
 
-  /* recursion */ 
-  if (Left < j) 
-    quickSort(Arr, Left, j); 
-  if (i < Right) 
-    quickSort(Arr, i, Right); 
+  /* recursion */
+  if (Left < j)
+    quickSort(Arr, Left, j);
+  if (i < Right)
+    quickSort(Arr, i, Right);
 }
 
 /**
@@ -405,20 +435,25 @@ bool AS5048A::error(){
  * Takes the address of the register as a 16 bit word
  * Returns the value of the register
  * Отправка команды на чтения регистров сенсора AS5048A
+ * MeanValueMedian включить режим медианного среднего
+ * NumberFunctionValues количество измерений для режима медианного среднего
  */
-word AS5048A::read(word RegisterAddress, bool MeanValueMedian){
+word AS5048A::read(word RegisterAddress, bool MeanValueMedian, byte NumberFunctionValues){
   word readdata;
-  word array_data[16];
+  if (NumberFunctionValues <= 0){
+    NumberFunctionValues = 1;
+  }
+  word array_data[NumberFunctionValues];
   word command = 0b0100000000000000; // PAR=0 R/W=R
-  
+
   command |= RegisterAddress;
-  
+
   //Add a parity bit on the the MSB
   command |= ((word)spiCalcEvenParity(command)<<15);
-  
+
   //SPI - begin transaction
   SPI.beginTransaction(settings);
-  
+
   digitalWrite(_cs, LOW);
   SPI.transfer16(command);
   digitalWrite(_cs, HIGH);
@@ -430,30 +465,39 @@ word AS5048A::read(word RegisterAddress, bool MeanValueMedian){
     Serial.print(") with command: 0b");
     Serial.println(command, BIN);
   #endif
-  
+
   //Send the command and Now read the response
   if (MeanValueMedian == true){
-  
-    for ( byte i = 0; i < 16; i++){
+
+    for ( byte i = 0; i < NumberFunctionValues-1; i++){ //(sizeof(array_data) / sizeof(array_data[0]))
       digitalWrite(_cs, LOW);
       array_data[i] = SPI.transfer16(command) & ~0xC000;
       digitalWrite(_cs, HIGH);
-      //Serial.println(array_data[i], BIN);   
+      //Serial.println(array_data[i], BIN);
     }
 
-    quickSort(array_data, 0, 15);
-    readdata = ( array_data[8]  + array_data[9]  ) / 2 ;  
-    
     SPI.endTransaction();
     //SPI - end transaction
-    
+
+    quickSort(array_data, 0, NumberFunctionValues-1 );
+    if (NumberFunctionValues > 1){
+      if((NumberFunctionValues % 2) > 0 ){
+        readdata = (array_data[(NumberFunctionValues / 2)-1] + array_data[NumberFunctionValues / 2]  + array_data[(NumberFunctionValues / 2)+1]  ) / 3 ;
+      }else{
+        readdata = ( array_data[(NumberFunctionValues / 2)-1]  + array_data[NumberFunctionValues / 2] ) / 2 ;
+      }
+    }else{
+      readdata = array_data[0] ;
+    }
+
+
     //Return the data, stripping the parity and error bits
-    return readdata;  
+    return readdata;
   }else{
     digitalWrite(_cs, LOW);
     readdata = SPI.transfer16(command);
     digitalWrite(_cs, HIGH);
-    
+
     #ifdef AS5048A_DEBUG
       Serial.print("Read returned: ");
       Serial.print(highByte(readdata), BIN);
@@ -470,14 +514,14 @@ word AS5048A::read(word RegisterAddress, bool MeanValueMedian){
     }else {
       _errorFlag = false;
     }
-    
+
     SPI.endTransaction();
     //SPI - end transaction
-    
+
     //Return the data, stripping the parity and error bits
     return readdata & ~0xC000;
   }
-  
+
 }
 
 
@@ -491,16 +535,16 @@ word AS5048A::read(word RegisterAddress, bool MeanValueMedian){
 word AS5048A::write(word RegisterAddress, word WriteData) {
   word command = 0b0000000000000000; // PAR=0 R/W=W
   word dataToSend = 0b0000000000000000;
-  
+
   command |= RegisterAddress;
   dataToSend |= WriteData;
-  
+
   //Add a parity bit on the the MSB
   command |= ((word)spiCalcEvenParity(command) << 15);
-  
+
   //Craft another packet including the data and parity
   dataToSend |= ((word)spiCalcEvenParity(dataToSend) << 15);
-  
+
 #ifdef AS5048A_DEBUG
   Serial.print("Write (0x");
   Serial.print(RegisterAddress, HEX);
@@ -525,7 +569,7 @@ word AS5048A::write(word RegisterAddress, word WriteData) {
   digitalWrite(_cs, LOW);
   SPI.transfer16(dataToSend);
   digitalWrite(_cs, HIGH);
-  
+
   //Send a NOP to get the new data in the register
   digitalWrite(_cs, LOW);
   dataToSend = SPI.transfer16(AS5048A_NOP);

@@ -107,7 +107,7 @@ int AS5048A::getRotation(){
  * Возвращает угловое двоичное 14 битное угловое значение (DEC 16383)
  * Угловое выходное значение, включая коррекцию нулевой позиции.
  */
-word AS5048A::getRawRotation(bool EnableMedianValue = false, byte NumberFunctionValues = 16){
+word AS5048A::getRawRotation(bool EnableMedianValue, byte NumberFunctionValues){
   return AS5048A::read(AS5048A_ANGLE, EnableMedianValue, NumberFunctionValues);
 }
 

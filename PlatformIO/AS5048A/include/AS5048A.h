@@ -1,5 +1,5 @@
-#ifndef as5048_h
-#define as5048_h
+#pragma once
+
 #define LIBRARY_VERSION 1.0.1
 
 #include <Arduino.h>
@@ -221,4 +221,3 @@ private:
    */
   byte spiCalcEvenParity(word valueADC);
 };
-#endif

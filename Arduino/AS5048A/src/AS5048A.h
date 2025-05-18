@@ -5,30 +5,29 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-//#include <math.h>
-//#include <stdio.h>
-//#include <stdlib.h>
+// #include <math.h>
+// #include <stdio.h>
+// #include <stdlib.h>
 
-class AS5048A{
+class AS5048A {
 
   bool _errorFlag;
   byte _cs;
-  //byte cs;
-  //byte dout;
-  //byte din;
-  //byte clk;
-  //word transaction(word data);
+  // byte cs;
+  // byte dout;
+  // byte din;
+  // byte clk;
+  // word transaction(word data);
   word _position;
-  bool _reverse; //Флаг напраления движения ползуна станка
+  bool _reverse; // Флаг напраления движения ползуна станка
 
   SPISettings settings;
 
-  public:
-
+public:
   /**
    *  Constructor
    */
-  AS5048A(byte Arg_Cs);
+  AS5048A(byte argCs);
 
   /**
    * Initialiser
@@ -51,14 +50,11 @@ class AS5048A{
    * median включить режим медианного среднего
    * sizeValues количество измерений для режима медианного среднего
    */
-
   // Помечаем функцию как устаревшую
-  [[deprecated("Эта функция устарела, используйте новую функцию.")]] 
-  word read(byte sizeValues = 16, word registerAddress, bool median = false);
-
+  [[deprecated("Эта функция устарела, используйте новую функцию.")]]
+  word readAveragingMedian(word registerAddress, byte sizeValues = 16, bool median = false);
+  word readAveragingUniversal(word registerAddress, byte sizeValues = 16, bool median = false, bool circular = false);
   word read(word registerAddress);
-
-  word read(byte sizeValues = 16, word registerAddress, bool median = false, bool circular = false);
 
   /**
    * Write to a register
@@ -84,81 +80,86 @@ class AS5048A{
   /**
    * Возвращает физическую величину в угловых градусах, полученное из двоичного 14 битного числа АЦП
    */
-  float RotationRawToAngle (word DiscreteCode);
+  float rotationRawToAngle(word discreteCode);
 
   /**
-   *Возвращает физическую величину в угловых радианах, полученное из двоичного 14 битного числа АЦП
+   * Возвращает физическую величину в угловых радианах, полученное из двоичного 14 битного числа АЦП
    */
-  float RotationRawToRadian(word DiscreteCode);
+  float rotationRawToRadian(word discreteCode);
 
   /**
-  *  Функция RadianToRotationRaw: Эта функция принимает угол в радианах и возвращает значение, 
-  *  соответствующее этому углу в формате, который использует АЦП (или в дискретном коде).
-  */
-  word RadianToRotationRaw(double radians);
+   * Функция RadianToRotationRaw: Эта функция принимает угол в радианах и возвращает значение,
+   * соответствующее этому углу в формате, который использует АЦП (или в дискретном коде).
+   */
+  word radianToRotationRaw(double radians);
 
   /**
-  * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру передаются адреса переменных
-  */
-  void AbsoluteAngleRotation (float *RotationAngle, float *AngleCurrent, float *AnglePrevious);
+   * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру передаются адреса переменных
+   */
+  void absoluteAngleRotation(float *rotationAngle, float *angleCurrent, float *anglePrevious);
 
   /**
-  * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру передаются адреса переменных
-  */
-  float AbsoluteAngleRotation (float *RotationAngle, float AngleCurrent, float *AnglePrevious);
+   * Возвращает инкрементный и декрементный угол поворота в переменную RotationAngle в процедуру передаются адреса переменных
+   */
+  float absoluteAngleRotation(float *rotationAngle, float angleCurrent, float *anglePrevious);
 
   /**
-  * Функция для сортировки по возрастанию
-  */
+   * Функция для сортировки по возрастанию
+   */
   void quickSort(word *adcValues, int left, int right);
 
   /**
-  * Функция для вычисления медианы
-  */
-  word calculateMedian(word* arrayData, int sizeValues);
+   * Функция для вычисления медианы
+   */
+  word calculateMedian(word *adcValues, int sizeValues);
 
   /**
-  * Вычисляет круговое среднее для заданного массива 
-  */
-  word calculateCircular(word *AdcValues, int sizeArray); 
+   * Вычисляет круговое среднее для заданного массива
+   */
+  word calculateCircular(word *adcValues, int sizeArray);
 
   /**
-  *возвращает минуты угла
-  */
-  float GetAngularMinutes (float AngleAbsolute);
+   * Вычисляет круговое среднее c медианой для заданного массива
+   */
+  word calculateCircularMedian(word *adcValues, int sizeArray);
 
   /**
-  *возвращает секунды угла
-  */
-  float GetAngularSeconds (float AngleAbsolute);
+   *возвращает минуты угла
+   */
+  float getAngularMinutes(float angleAbsolute);
+
+  /**
+   * Возвращает секунды угла
+   */
+  float getAngularSeconds(float angleAbsolute);
 
   /*!
-  * @brief возвращает перемещение прямозубой зубчатой рейки в мм
-  * @param WheelRotationAngle - Угол поворота колеса
-  * @param NormalModule - Модуль нормальный
-  * @param NumberGearTeeth - Число зубьев колеса или число заходов червяка
-  * @param (PI * NormalModule) - Шаг торцовый
-  * @return float перемещение мм
-  */
-  float LinearDisplacementRack ( float WheelRotationAngle, float NormalModule, float NumberGearTeeth);
+   * @brief возвращает перемещение прямозубой зубчатой рейки в мм
+   * @param WheelRotationAngle - Угол поворота колеса
+   * @param NormalModule - Модуль нормальный
+   * @param NumberGearTeeth - Число зубьев колеса или число заходов червяка
+   * @param (PI * NormalModule) - Шаг торцовый
+   * @return float перемещение мм
+   */
+  float linearDisplacementRack(float wheelRotationAngle, float normalModule, float numberGearTeeth);
 
   /*!
-  * @brief возвращает перемещение прямозубой зубчатой рейки в мм
-  * @param WheelRotationAngle - Угол поворота колеса
-  * @param NormalModule - Модуль нормальный
-  * @param NumberGearTeeth - Число зубьев колеса или число заходов червяка
-  * @param (PI * NormalModule) - Шаг торцовый
-  * @param AngleTiltTooth Угол наклона зуба, аргумент по умолчанию 20
-  * @return float перемещение мм
-  */
-  float LinearDisplacementRack ( float WheelRotationAngle, float NormalModule, float NumberGearTeeth, float AngleTiltTooth);
+   * @brief возвращает перемещение прямозубой зубчатой рейки в мм
+   * @param WheelRotationAngle - Угол поворота колеса
+   * @param NormalModule - Модуль нормальный
+   * @param NumberGearTeeth - Число зубьев колеса или число заходов червяка
+   * @param (PI * NormalModule) - Шаг торцовый
+   * @param AngleTiltTooth Угол наклона зуба, аргумент по умолчанию 20
+   * @return float перемещение мм
+   */
+  float linearDisplacementRack(float wheelRotationAngle, float normalModule, float numberGearTeeth, float angleTiltTooth);
 
   /**
-  *возвращает перемещение винтовой передачи в мм
-  *StepGroove - шаг резьбы винта
-  *ScrewRotationAngle - угол поворота винта
-  */
-  float LinearMotionHelicalGear ( float ScrewRotationAngle, float StepGroove);
+   * Возвращает перемещение винтовой передачи в мм
+   * StepGroove - шаг резьбы винта
+   * ScrewRotationAngle - угол поворота винта
+   */
+  float linearMotionHelicalGear(float screwRotationAngle, float stepGroove);
 
   /**
    * returns the value of the state register
@@ -188,21 +189,21 @@ class AS5048A{
   void printErrors();
 
   /**
-   *Функция посылает команда NOP и возвращает содержимое регистра. Команда NOP представляет собой фиктивную
-   *запись в регистр x0000 сенсора AS5048
+   * Функция посылает команда NOP и возвращает содержимое регистра. Команда NOP представляет собой фиктивную
+   * запись в регистр x0000 сенсора AS5048
    */
-  word DummyOperNoInf();
+  word dummyOperNoInf();
 
   /**
-   *Процедура записывает абсолютное значен измеренно сенсором AS5048, случайно расположенного магнита на оси вращения,
-   *как нулевую позицию угла
+   * Процедура записывает абсолютное значен измеренно сенсором AS5048, случайно расположенного магнита на оси вращения,
+   * как нулевую позицию угла
    */
-  void ProgAbsolAngleZeroPosit ();
+  void progAbsoluteAngleZeroPosit();
 
   /**
    * Set the zero position
    */
-  void setZeroPosition(word Arg_Position);
+  void setZeroPosition(word argPosition);
 
   /**
    * Returns the current zero position
@@ -214,12 +215,10 @@ class AS5048A{
    */
   bool error();
 
-
-
-  private:
+private:
   /**
    * возвращает бит чётности
    */
-  byte spiCalcEvenParity(word);
+  byte spiCalcEvenParity(word valueADC);
 };
 #endif
